@@ -1,32 +1,30 @@
 #!/usr/bin/env bash
-# Configures a new ubuntu machine by installing
-# Nginx where it should be listening on port 80
-# Serve a page that would return a Hello World string
-#
+# Update the package list
 
-echo -e "Updating and installing Nginx.\n"
-sudo apt-get update -y -qq && \
-	 sudo apt-get install nginx -y
+sudo apt-get update
 
-echo -e "\nSetting up some minor stuff.\n"
+# Install nginx
+sudo apt-get install nginx -y
 
-# starting nginx service
-sudo service nginx start
+# Configure nginx to listen on port 80
+sudo sed -i 's/listen 80 default_server/listen 80/g' /etc/nginx/sites-available/default
 
-# allowing nginx on firewall
-sudo ufw allow 'Nginx HTTP'
-
-# Give the user ownership to website files for easy editing
-sudo chown -R "$USER":"$USER" /var/www/html
-sudo chmod -R 755 /var/www
-
-# Backup default index
-cp /var/www/html/index.nginx-debian.html /var/www/html/index.nginx-debian.html.bckp
-
-# Creating new index
-echo -e "Hello World!" | dd status=none of=/var/www/html/index.nginx-debian.html
-
-# Restarting nginx
+# Restart nginx
 sudo service nginx restart
 
-echo -e "\nCompleted. ✅\n"
+# Create a sample HTML file containing the string "Holberton School"
+echo "<html><body>Holberton School</body></html>" | sudo tee /var/www/html/index.html >/dev/null
+
+# Test the nginx configuration
+curl -sI 127.0.0.1 | grep "HTTP/1.1 200 OK" >/dev/null
+
+if [ $? -eq 0 ]; then
+  curl 127.0.0.1 | grep "Holberton School" >/dev/null
+  if [ $? -eq 0 ]; then
+    echo "Configuration successful!"
+    exit 0
+  fi
+fi
+
+echo "Something went wrong :("
+exit 1
